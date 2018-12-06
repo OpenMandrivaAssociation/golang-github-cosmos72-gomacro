@@ -1,0 +1,38 @@
+From 1cd6a104a197c8f82689dfa028e1c6fcfd79f6e0 Mon Sep 17 00:00:00 2001
+From: Massimiliano Ghilardi <massimiliano.ghilardi@gmail.com>
+Date: Sun, 15 Jul 2018 23:01:56 +0200
+Subject: [PATCH] fix #34: do not assume that os.File 6th method is "Read"
+
+Signed-off-by: Elliott Sales de Andrade <quantum.analyst@gmail.com>
+---
+ xreflect/type_test.go | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/xreflect/type_test.go b/xreflect/type_test.go
+index 38558f2..929dfc4 100644
+--- a/xreflect/type_test.go
++++ b/xreflect/type_test.go
+@@ -494,8 +494,18 @@ func TestInterfaceIoReader(t *testing.T) {
+ 
+ 	file := os.Scope().Lookup("File").Type().(*types.Named)
+ 
+-	tfileRead := tfile.Method(6).Type.GoType().(*types.Signature)
+-	fileRead := file.Method(6).Type().(*types.Signature)
++	tfileMethod, _ := tfile.MethodByName("Read", "")
++	var fileMethod *types.Func
++	for i, n := 0, file.NumMethods(); i < n; i++ {
++		fileMethod = file.Method(i)
++		if fileMethod.Name() == "Read" {
++			break
++		}
++	}
++	is(t, fileMethod.Name(), "Read")
++
++	tfileRead := tfileMethod.Type.GoType().(*types.Signature)
++	fileRead := fileMethod.Type().(*types.Signature)
+ 	ireaderRead := ireader.ExplicitMethod(0).Type().(*types.Signature)
+ 
+ 	if false {
+-- 
+2.17.1
+
